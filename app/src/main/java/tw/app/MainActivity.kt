@@ -1,11 +1,11 @@
 package tw.app
 
-import android.graphics.drawable.Drawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,40 +18,108 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navArgument
+import androidx.navigation.compose.rememberNavController
 import tw.app.ui.theme.ComposeAppsTheme
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
 import tw.app.viewmodel.UiState
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val appViewModel: AppViewModel by viewModels()
         setContent {
             ComposeAppsTheme {
+                val navController = rememberNavController()
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    HomeScreen(appViewModel.uiState.collectAsState())
+                    AppNavHost(
+                        navController = navController,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }
-        appViewModel.getApps()
     }
 }
 
 @Composable
-fun HomeScreen(stateFlow: State<UiState>) {
-    log("HS ${stateFlow.value}")
-    when (val state = stateFlow.value) {
+fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
+    val appViewModel = viewModel<AppViewModel>()
+    appViewModel.loadApps()
+
+    NavHost(
+        navController = navController,
+        startDestination = "AppList",
+        modifier = modifier
+    ) {
+        composable("AppList") {
+            log("composable AppList")
+            val state = appViewModel.uiState.collectAsState()
+            AppList(state) {
+                // In the source screen...
+                navController.currentBackStackEntry?.arguments =
+                    Bundle().apply {
+                        putSerializable("appInfo", it)
+                    }
+
+                navController.navigate("AppDetail")
+            }
+        }
+        composable(
+            "AppDetail",
+            arguments = listOf(navArgument("appInfo") {
+                type = NavType.SerializableType(App::class.java)
+            })
+        ) {
+            log("composable AppDetail")
+
+            val app = navController.previousBackStackEntry
+                ?.arguments?.getSerializable("appInfo") as App
+            AppDetail(app = app)
+        }
+    }
+}
+
+@Composable
+fun AppDetail(app: App) {
+    Column {
+        Image(
+            bitmap = BitmapUtil.getBitmap(LocalContext.current, app.icon)!!.asImageBitmap(),
+            contentDescription = "app icon",
+            Modifier
+                .size(70.dp)
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 30.dp)
+        )
+
+    }
+
+}
+
+@Composable
+fun AppList(uiState: State<UiState>, onItemClick: (App) -> Unit) {
+    log("vm ${viewModel<AppViewModel>().hashCode()}")
+    log("vm ${viewModel<AppViewModel>().hashCode()}")
+
+    log("HS ${uiState.value}")
+    when (val state = uiState.value) {
         UiState.Loading -> {
-            CircularProgressIndicator()
+            Box(modifier = Modifier.fillMaxSize()) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
         }
         is UiState.Success -> {
             val success = state as UiState.Success
@@ -59,7 +127,15 @@ fun HomeScreen(stateFlow: State<UiState>) {
             log("apps $apps")
             LazyColumn {
                 items(apps) {
-                    AppItem(app = it)
+                    AppItem(app = it, onClick = {
+                        onItemClick(it)
+                    })
+                    Spacer(
+                        modifier = Modifier
+                            .background(Color.Black)
+                            .fillMaxWidth()
+                            .height(2.dp)
+                    )
                 }
             }
         }
@@ -71,17 +147,19 @@ fun HomeScreen(stateFlow: State<UiState>) {
 }
 
 @Composable
-fun AppItem(app: App) {
+fun AppItem(app: App, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .height(72.dp),
+            .height(72.dp)
+            .clickable {
+                onClick()
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = BitmapPainter(
-                BitmapUtil.getBitmap(LocalContext.current, app.icon)!!.asImageBitmap()
-            ),
+            bitmap =
+            BitmapUtil.getBitmap(LocalContext.current, app.icon)!!.asImageBitmap(),
             modifier = Modifier
                 .padding(start = 16.dp)
                 .size(48.dp),
@@ -108,10 +186,4 @@ fun AppItem(app: App) {
             )
         }
     }
-}
-
-@Preview
-@Composable
-fun AppItemPreView() {
-    AppItem(App("XXX", Drawable.createFromPath("")!!, "11"))
 }

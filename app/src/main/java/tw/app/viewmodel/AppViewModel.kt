@@ -10,12 +10,10 @@ import tw.app.log
 import tw.app.repo.AppRepo
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
-    private val TAG = "AppViewModel"
-
     private val _appListState: MutableStateFlow<UiState> = MutableStateFlow(UiState.Loading)
     val uiState: StateFlow<UiState> = _appListState
 
-    fun getApps() {
+    fun loadApps() {
         log("getApps")
         _appListState.value = UiState.Loading
         viewModelScope.launch {
