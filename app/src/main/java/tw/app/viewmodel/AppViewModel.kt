@@ -1,36 +1,52 @@
 package tw.app.viewmodel
 
 import android.app.Application
-import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import tw.app.log
 import tw.app.repo.AppRepo
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val TAG = "AppViewModel"
 
-    val appList = mutableStateListOf<App>()
-    val isLoading = mutableStateOf(false)
+    private val _appListState: MutableStateFlow<UiState> = MutableStateFlow(UiState.Loading)
+    val uiState: StateFlow<UiState> = _appListState
 
     fun getApps() {
-        Log.d(TAG, "getApps: isLoading" + isLoading.hashCode())
-        isLoading.value = true
-        Log.d(TAG, "getApps: isLoading after" + isLoading.hashCode())
-
-        viewModelScope.launch() {
-            Log.d(
-                "AppRepo",
-                "launch@${Thread.currentThread().hashCode()} ${Thread.currentThread()} "
-            )
+        log("getApps")
+        _appListState.value = UiState.Loading
+        viewModelScope.launch {
+            log("launch in.")
             val appRepo = AppRepo.Impl()
             val apps = appRepo.getApps(getApplication())
-            appList.clear()
-            appList.addAll(apps)
-            isLoading.value = false
+            apps
+                .onStart {
+                    log("getApps: onStart")
+                }
+                .onEach {
+                    log("getApps: onEach $it")
+                }
+                .onCompletion {
+                    log("getApps: onCompletion $it")
+                }
+                .flowOn(Dispatchers.IO)
+                .catch {
+                    log("getApps: error")
+                }.collect {
+                    log("getApps: collect")
+                    _appListState.value = UiState.Success(it)
+                }
         }
     }
 
+
+}
+
+sealed class UiState {
+    data class Success(val apps: List<App>) : UiState()
+    data class Error(val errorMsg: String) : UiState()
+    object Loading : UiState()
 }

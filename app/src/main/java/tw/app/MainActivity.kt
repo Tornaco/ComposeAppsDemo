@@ -2,7 +2,6 @@ package tw.app
 
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -15,7 +14,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import tw.app.ui.theme.ComposeAppsTheme
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
+import tw.app.viewmodel.UiState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
             ComposeAppsTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
-                    HomeScreen(appViewModel.appList, appViewModel.isLoading)
+                    HomeScreen(appViewModel.uiState.collectAsState())
                 }
             }
         }
@@ -46,14 +47,25 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen(apps: List<App>, loading: MutableState<Boolean>) {
-    Log.d("viewmodel", "HS ${loading.value}")
-    if (loading.value) {
-        CircularProgressIndicator()
-    }
-    LazyColumn {
-        items(apps) {
-            AppItem(app = it)
+fun HomeScreen(stateFlow: State<UiState>) {
+    log("HS ${stateFlow.value}")
+    when (val state = stateFlow.value) {
+        UiState.Loading -> {
+            CircularProgressIndicator()
+        }
+        is UiState.Success -> {
+            val success = state as UiState.Success
+            val apps = success.apps
+            log("apps $apps")
+            LazyColumn {
+                items(apps) {
+                    AppItem(app = it)
+                }
+            }
+        }
+        else -> {
+            val error = state as UiState.Error
+            log("error $error")
         }
     }
 }
