@@ -9,18 +9,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -68,7 +67,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable("AppList") {
             log("composable AppList")
             val state = appViewModel.uiState.collectAsState()
-            AppList(state) {
+            AppListWithSearchBar(state) {
                 // In the source screen...
                 navController.currentBackStackEntry?.arguments =
                     Bundle().apply {
@@ -94,6 +93,38 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
 }
 
 @Composable
+fun SearchBar() {
+    val textFieldValueState = remember {
+        mutableStateOf(
+            IndexedTextFieldValue(
+                TextFieldValue(
+                    text = "",
+                    selection = TextRange(0)
+                ), 0
+            )
+        )
+    }
+    log("SearchBar compose $textFieldValueState")
+    OutlinedTextField(
+        value = textFieldValueState.value.textFieldValue,
+        onValueChange = { tfv ->
+            val formatted = if (tfv.text.length >= 3) tfv.text.substring(0, 3) else tfv.text
+            log("onValueChange $tfv")
+            textFieldValueState.value = IndexedTextFieldValue(
+                tfv.copy(text = formatted),
+                textFieldValueState.value.index + 1
+            )
+            trace()
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(6.dp),
+
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+}
+
+@Composable
 fun AppDetail(app: App) {
     Column {
         Image(
@@ -110,9 +141,18 @@ fun AppDetail(app: App) {
 }
 
 @Composable
+fun AppListWithSearchBar(uiState: State<UiState>, onItemClick: (App) -> Unit) {
+    Column {
+        SearchBar()
+        AppList(uiState, onItemClick)
+    }
+}
+
+@Composable
 fun AppList(uiState: State<UiState>, onItemClick: (App) -> Unit) {
     log("vm ${viewModel<AppViewModel>().hashCode()}")
     log("vm ${viewModel<AppViewModel>().hashCode()}")
+
 
     log("HS ${uiState.value}")
     when (val state = uiState.value) {
