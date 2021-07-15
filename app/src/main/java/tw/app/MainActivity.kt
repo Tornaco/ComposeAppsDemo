@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -29,6 +30,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.rememberNavController
+import coil.compose.LocalImageLoader
+import coil.compose.rememberImagePainter
+import coil.transform.CircleCropTransformation
 import tw.app.ui.theme.ComposeAppsTheme
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
@@ -198,8 +202,14 @@ fun AppItem(app: App, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            bitmap =
-            BitmapUtil.getBitmap(LocalContext.current, app.icon)!!.asImageBitmap(),
+            painter = rememberImagePainter(
+                data = app.icon.toBitmap(),
+                imageLoader = LocalImageLoader.current,
+                builder = {
+                    placeholder(R.drawable.ic_launcher_foreground)
+                    transformations(CircleCropTransformation())
+                }
+            ),
             modifier = Modifier
                 .padding(start = 16.dp)
                 .size(48.dp),

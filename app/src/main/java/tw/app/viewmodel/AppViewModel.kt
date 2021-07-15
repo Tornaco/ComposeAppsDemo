@@ -30,7 +30,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 .onCompletion {
                     log("getApps: onCompletion $it")
                 }
-                .flowOn(Dispatchers.IO)
                 .catch {
                     log("getApps: error")
                 }.collect {
