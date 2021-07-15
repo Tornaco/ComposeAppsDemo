@@ -1,0 +1,4 @@
+site_name: Jetpack compose demo
+site_url: https://example.com/
+theme:
+  name: material
