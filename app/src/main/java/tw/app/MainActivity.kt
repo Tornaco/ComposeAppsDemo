@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -33,6 +34,11 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.LocalImageLoader
 import coil.compose.rememberImagePainter
 import coil.transform.CircleCropTransformation
+import com.google.accompanist.insets.LocalWindowInsets
+import com.google.accompanist.insets.ProvideWindowInsets
+import com.google.accompanist.insets.rememberInsetsPaddingValues
+import com.google.accompanist.insets.ui.TopAppBar
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import tw.app.ui.theme.ComposeAppsTheme
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
@@ -43,19 +49,52 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
+            val systemUiController = rememberSystemUiController()
+            val useDarkIcons = MaterialTheme.colors.isLight
+            SideEffect {
+                systemUiController.setSystemBarsColor(Color.Transparent, darkIcons = useDarkIcons)
+            }
+
             ComposeAppsTheme {
-                val navController = rememberNavController()
-                // A surface container using the 'background' color from the theme
-                Surface(color = MaterialTheme.colors.background) {
-                    AppNavHost(
-                        navController = navController,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                ProvideWindowInsets {
+                    InsetsBasics()
                 }
             }
         }
     }
+}
+
+@Composable
+fun InsetsBasics() {
+    // A surface container using the 'background' color from the theme
+    Surface(color = MaterialTheme.colors.background) {
+        Scaffold(topBar = {
+            // We use TopAppBar from accompanist-insets-ui which allows us to provide
+            // content padding matching the system bars insets.
+            TopAppBar(
+                title = { Text("应用管理") },
+                backgroundColor = MaterialTheme.colors.surface.copy(alpha = 0.9f),
+                contentPadding = rememberInsetsPaddingValues(
+                    LocalWindowInsets.current.statusBars,
+                    applyBottom = false,
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                elevation = 0.dp
+            )
+        }) {
+            Box(modifier = Modifier.padding(it)) {
+                val navController = rememberNavController()
+                AppNavHost(
+                    navController = navController,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -166,8 +205,7 @@ fun AppList(uiState: State<UiState>, onItemClick: (App) -> Unit) {
             }
         }
         is UiState.Success -> {
-            val success = state as UiState.Success
-            val apps = success.apps
+            val apps = state.apps
             log("apps $apps")
             LazyColumn {
                 items(apps) {
@@ -229,7 +267,7 @@ fun AppItem(app: App, onClick: () -> Unit) {
                     .padding(end = 30.dp)
             )
             Text(
-                text = app.versionCode, textAlign = TextAlign.Start,
+                text = app.versionName ?: "UnKnow", textAlign = TextAlign.Start,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(end = 30.dp)
