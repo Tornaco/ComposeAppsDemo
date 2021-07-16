@@ -14,7 +14,6 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
@@ -34,6 +33,7 @@ import coil.compose.LocalImageLoader
 import coil.compose.rememberImagePainter
 import coil.transform.CircleCropTransformation
 import tw.app.ui.theme.ComposeAppsTheme
+import tw.app.ui.theme.dividerColor
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
 import tw.app.viewmodel.UiState
@@ -176,9 +176,9 @@ fun AppList(uiState: State<UiState>, onItemClick: (App) -> Unit) {
                     })
                     Spacer(
                         modifier = Modifier
-                            .background(Color.Black)
+                            .background(MaterialTheme.dividerColor)
                             .fillMaxWidth()
-                            .height(2.dp)
+                            .height(1.dp)
                     )
                 }
             }
