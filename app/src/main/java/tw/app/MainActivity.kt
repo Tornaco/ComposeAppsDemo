@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.WindowCompat
@@ -82,8 +81,7 @@ fun InsetsBasics() {
             Column {
                 val appViewModel = viewModel<AppViewModel>()
                 SearchBar(Modifier.padding(horizontal = 16.dp), onSearchChanged = {
-                    appViewModel.searchByKeyWord(it)
-
+                    appViewModel.searchAppByKeyWord(it)
                 })
                 Box(modifier = Modifier.padding(it)) {
                     val navController = rememberNavController()
@@ -167,7 +165,6 @@ fun SearchBar(modifier: Modifier = Modifier, onSearchChanged: (String) -> Unit) 
         modifier = modifier
             .fillMaxWidth()
             .padding(6.dp),
-
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Search,
