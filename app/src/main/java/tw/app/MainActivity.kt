@@ -9,8 +9,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,9 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.view.WindowCompat
@@ -37,7 +38,6 @@ import coil.transform.CircleCropTransformation
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import com.google.accompanist.insets.ui.TopAppBar
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import tw.app.ui.theme.ComposeAppsTheme
 import tw.app.viewmodel.App
@@ -71,26 +71,27 @@ class MainActivity : ComponentActivity() {
 fun InsetsBasics() {
     // A surface container using the 'background' color from the theme
     Surface(color = MaterialTheme.colors.background) {
-        Scaffold(topBar = {
-            // We use TopAppBar from accompanist-insets-ui which allows us to provide
-            // content padding matching the system bars insets.
-            TopAppBar(
-                title = { Text("应用管理") },
-                backgroundColor = MaterialTheme.colors.surface.copy(alpha = 0.9f),
-                contentPadding = rememberInsetsPaddingValues(
-                    LocalWindowInsets.current.statusBars,
-                    applyBottom = false,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                elevation = 0.dp
-            )
-        }) {
-            Box(modifier = Modifier.padding(it)) {
-                val navController = rememberNavController()
-                AppNavHost(
-                    navController = navController,
-                    modifier = Modifier.padding(16.dp)
-                )
+        Scaffold(Modifier
+            .padding(top = rememberInsetsPaddingValues(
+                insets = LocalWindowInsets.current.statusBars
+            ).calculateTopPadding())
+            .fillMaxSize()
+
+        ) {
+            Column {
+                val appViewModel = viewModel<AppViewModel>()
+                SearchBar(Modifier.padding(horizontal = 16.dp), onSearchChanged = {
+                    appViewModel.searchByKeyWord(it)
+
+                })
+                Box(modifier = Modifier.padding(it)) {
+                    val navController = rememberNavController()
+                    AppNavHost(
+                        appViewModel = appViewModel,
+                        navController = navController,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
         }
     }
@@ -98,8 +99,11 @@ fun InsetsBasics() {
 }
 
 @Composable
-fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
-    val appViewModel = viewModel<AppViewModel>()
+fun AppNavHost(
+    appViewModel: AppViewModel,
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+) {
     appViewModel.loadApps()
 
     NavHost(
@@ -136,7 +140,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
 }
 
 @Composable
-fun SearchBar() {
+fun SearchBar(modifier: Modifier = Modifier, onSearchChanged: (String) -> Unit) {
     val textFieldValueState = remember {
         mutableStateOf(
             IndexedTextFieldValue(
@@ -151,19 +155,30 @@ fun SearchBar() {
     OutlinedTextField(
         value = textFieldValueState.value.textFieldValue,
         onValueChange = { tfv ->
-            val formatted = if (tfv.text.length >= 3) tfv.text.substring(0, 3) else tfv.text
+            val formatted = tfv.text
             log("onValueChange $tfv")
             textFieldValueState.value = IndexedTextFieldValue(
                 tfv.copy(text = formatted),
-                textFieldValueState.value.index + 1
+                textFieldValueState.value.index
             )
-            trace()
+            onSearchChanged(tfv.text)
         },
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(6.dp),
 
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = "Search",
+                modifier = Modifier.size(18.dp)
+            )
+        },
+        placeholder = {
+            Text("输入应用名称")
+        },
+        maxLines = 1,
+        singleLine = true
     )
 }
 
@@ -186,7 +201,6 @@ fun AppDetail(app: App) {
 @Composable
 fun AppListWithSearchBar(uiState: State<UiState>, onItemClick: (App) -> Unit) {
     Column {
-        SearchBar()
         AppList(uiState, onItemClick)
     }
 }

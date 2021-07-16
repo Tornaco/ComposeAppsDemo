@@ -39,6 +39,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun searchByKeyWord(keyword: String) {
+        val value = _appListState.value
+        if (value is UiState.Success) {
+            _appListState.value = UiState.Loading
+            value.apps.filter {
+                it.title.contains(keyword)
+            }.toList().also {
+                _appListState.value = UiState.Success(it)
+            }
+        }
+    }
+
 
 }
 
