@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
@@ -40,6 +39,7 @@ import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import tw.app.ui.theme.ComposeAppsTheme
+import tw.app.ui.theme.dividerColor
 import tw.app.viewmodel.App
 import tw.app.viewmodel.AppViewModel
 import tw.app.viewmodel.UiState
@@ -228,9 +228,9 @@ fun AppList(uiState: State<UiState>, onItemClick: (App) -> Unit) {
                     })
                     Spacer(
                         modifier = Modifier
-                            .background(Color.Black)
+                            .background(MaterialTheme.dividerColor)
                             .fillMaxWidth()
-                            .height(2.dp)
+                            .height(1.dp)
                     )
                 }
             }
